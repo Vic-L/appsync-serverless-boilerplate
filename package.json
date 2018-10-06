@@ -1,0 +1,16 @@
+{
+  "name": "appsync-serverless-boilerplate",
+  "version": "1.0.0",
+  "description": "AppSync with Serverless framework boilerplate",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Vic-L",
+  "license": "ISC",
+  "dependencies": {
+    "serverless-appsync-plugin": "^1.0.5",
+    "serverless-domain-manager": "^2.6.5",
+    "serverless-offline": "^3.27.0"
+  }
+}
