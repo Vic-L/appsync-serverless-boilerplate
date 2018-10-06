@@ -4,6 +4,11 @@
   "description": "AppSync with Serverless framework boilerplate",
   "main": "index.js",
   "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "sls offline start",
+    "deployStaging": "sls deploy --stage staging",
+    "deployProd": "sls deploy --stage prod",
+    "removeStaging": "sls remove --stage staging",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Vic-L",
