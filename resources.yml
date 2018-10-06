@@ -1,0 +1,182 @@
+###### STAGING ######
+staging:
+  resources:
+    APPSYNCBOILERPLATEstagingArticleTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: APPSYNCBOILERPLATEstagingArticleTable
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: modifiedDate
+            AttributeType: S
+          - AttributeName: createdDate # defined because used by GlobalSecondaryIndex
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+          - AttributeName: modifiedDate
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: createdDateIndex
+            KeySchema:
+              - AttributeName: createdDate
+                KeyType: HASH
+            Projection:
+              NonKeyAttributes:
+              - title
+              ProjectionType: INCLUDE
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        ## DynamoDB Stream
+        # StreamSpecification:
+        #   StreamViewType: NEW_IMAGE
+
+    ## IAM Service Role for auto scaling DynamoDB WCU and RCU
+    APPSYNCBOILERPLATEstagingDynamoDBASR: 
+      Type: "AWS::IAM::Role"
+      Properties: 
+       AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+         - 
+          Effect: Allow
+          Principal: 
+           Service: 
+            - 
+             "application-autoscaling.amazonaws.com"
+          Action: 
+           - 
+            "sts:AssumeRole"
+       Path: "/"
+       Policies: 
+        - 
+         PolicyName: root
+         PolicyDocument: 
+          Version: "2012-10-17"
+          Statement: 
+           - 
+            Effect: Allow
+            Action:          
+             - "dynamodb:DescribeTable"
+             - "dynamodb:UpdateTable"
+             - "cloudwatch:PutMetricAlarm"
+             - "cloudwatch:DescribeAlarms"
+             - "cloudwatch:GetMetricStatistics"
+             - "cloudwatch:SetAlarmState"
+             - "cloudwatch:DeleteAlarms"
+            Resource:
+              Fn::GetAtt:
+                - APPSYNCBOILERPLATEstagingArticleTable
+                - Arn
+
+    ## WRITE scaling policy and target
+    APPSYNCBOILERPLATEstagingDynamoDBWSP: 
+      Type: "AWS::ApplicationAutoScaling::ScalingPolicy"
+      Properties: 
+       PolicyName: WriteAutoScalingPolicy
+       PolicyType: TargetTrackingScaling
+       ScalingTargetId: 
+        Ref: APPSYNCBOILERPLATEstagingArticleTableWCST
+       TargetTrackingScalingPolicyConfiguration: 
+        TargetValue: 70
+        ScaleInCooldown: 180
+        ScaleOutCooldown: 1
+        PredefinedMetricSpecification: 
+         PredefinedMetricType: DynamoDBWriteCapacityUtilization
+    APPSYNCBOILERPLATEstagingArticleTableWCST:
+      Type: AWS::ApplicationAutoScaling::ScalableTarget
+      Properties: 
+        MaxCapacity: 100
+        MinCapacity: 1 
+        ResourceId: 
+          Fn::Join:
+            - /
+            - - table
+              - Ref: APPSYNCBOILERPLATEstagingArticleTable
+        RoleARN:
+          Fn::GetAtt:
+            - APPSYNCBOILERPLATEstagingDynamoDBASR
+            - Arn
+        ScalableDimension: "dynamodb:table:WriteCapacityUnits"
+        ServiceNamespace: dynamodb
+
+    ## READ scaling policy and target
+    APPSYNCBOILERPLATEstagingDynamoDBRSP: 
+      Type: "AWS::ApplicationAutoScaling::ScalingPolicy"
+      Properties: 
+       PolicyName: ReadAutoScalingPolicy
+       PolicyType: TargetTrackingScaling
+       ScalingTargetId: 
+        Ref: APPSYNCBOILERPLATEstagingArticleTableRCST
+       TargetTrackingScalingPolicyConfiguration: 
+        TargetValue: 70
+        ScaleInCooldown: 180
+        ScaleOutCooldown: 1
+        PredefinedMetricSpecification: 
+         PredefinedMetricType: DynamoDBReadCapacityUtilization
+    APPSYNCBOILERPLATEstagingArticleTableRCST:
+      Type: AWS::ApplicationAutoScaling::ScalableTarget
+      Properties: 
+        MaxCapacity: 10
+        MinCapacity: 1 
+        ResourceId: 
+          Fn::Join:
+            - /
+            - - table
+              - Ref: APPSYNCBOILERPLATEstagingArticleTable
+        RoleARN:
+          Fn::GetAtt:
+            - APPSYNCBOILERPLATEstagingDynamoDBASR
+            - Arn
+        ScalableDimension: "dynamodb:table:ReadCapacityUnits"
+        ServiceNamespace: dynamodb
+
+    ## IAM Service Role for Logging by AppSync
+    APPSYNCBOILERPLATEstagingAppSyncLSR:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - appsync.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: APPSYNCBOILERPLATEstagingAppSyncPushToCloudWatchLogsPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource: "*"
+
+    ## IAM Service Role of AppSync's DynamoDB
+    APPSYNCBOILERPLATEstagingAppSyncDynamoDBSR:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - appsync.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: APPSYNCBOILERPLATEstagingAppSyncDynamoDBSRPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action: "dynamodb:*"
+                  Resource: "*"
