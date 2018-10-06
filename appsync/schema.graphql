@@ -1,5 +1,5 @@
 type Query {
-  articles(): [Article!]!
+  articles: [Article!]!
 }
 
 type Article {
