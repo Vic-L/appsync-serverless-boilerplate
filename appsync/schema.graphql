@@ -1,0 +1,13 @@
+type Query {
+  articles(): [Article!]!
+}
+
+type Article {
+  id: ID!
+  canconicalId: ID!
+  title: String!
+  metaDescription: String!
+  content: String!
+  createdDate: String!
+  modifiedDate: String!
+}
