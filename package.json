@@ -13,6 +13,7 @@
   "author": "Vic-L",
   "license": "ISC",
   "dependencies": {
+    "aws-sdk": "^2.329.0",
     "serverless-appsync-plugin": "^1.0.5",
     "serverless-offline": "^3.27.0"
   }
