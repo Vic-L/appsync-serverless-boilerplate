@@ -7,7 +7,6 @@ custom:
   serverless-offline:
     port: 3000
   dynamodbConfig: ${file(./env.yml):${opt:stage, 'dev'}.dynamodbConfig}
-  customDomain: ${file(./env.yml):${opt:stage, 'dev'}.customDomain}
 
 service: ${self:custom.service}
 
@@ -36,4 +35,3 @@ resources:
 plugins:
   - serverless-appsync-plugin
   - serverless-offline
-  - serverless-domain-manager
